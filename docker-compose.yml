@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.10.18-management
+    hostname: ${RABBITMQ_HOST}
+    restart: unless-stopped
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=${RABBITMQ_DISK_FREE_LIMIT}
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq/mnesia
+    env_file:
+      - .env
+    ports:
+      - ${RABBITMQ_PORT}:${RABBITMQ_PORT}
+      - ${RABBITMQ_PORT_WEB}:${RABBITMQ_PORT_WEB}
+    networks:
+      asu_ms:
+        aliases:
+          - ${RABBITMQ_HOST}
