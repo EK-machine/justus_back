@@ -15,7 +15,7 @@ import { USER_CLIENT } from '@app/contracts/user';
           const user = configService.get('RABBITMQ_DEFAULT_USER');
           const pass = configService.get('RABBITMQ_DEFAULT_PASS');
           const host = configService.get('RABBITMQ_HOST');
-          const queue = configService.get('RABBITMQ_USER_QUEUE');
+          const queue = configService.get('USERS_RMQ_QUEUE');
           return {
           transport: Transport.RMQ,
           options: {

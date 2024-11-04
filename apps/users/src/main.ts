@@ -10,7 +10,8 @@ async function bootstrap() {
   const user = configService.get('RABBITMQ_DEFAULT_USER');
   const pass = configService.get('RABBITMQ_DEFAULT_PASS');
   const host = configService.get('RABBITMQ_HOST');
-  const queue = configService.get('RABBITMQ_USER_QUEUE');
+  const queue = configService.get('USERS_RMQ_QUEUE');
+  const port = configService.get('USERS_PORT');
 
   app.connectMicroservice({
     transport: Transport.RMQ,
@@ -20,11 +21,12 @@ async function bootstrap() {
       queueOptions: {
         durable: false,
       },
+      noAck: false,
     }
   });
 
   await app.startAllMicroservices();
 
-  await app.init();
+  await app.listen(port);
 }
 bootstrap();

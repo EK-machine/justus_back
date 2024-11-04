@@ -1,6 +1,31 @@
 version: '3.9'
 
+networks:
+  justus_network:
+    labels: &labels
+      - project=justus
+
 services:
+  postgres:
+    image: postgres:16.0
+    container_name: postgresql
+    restart: unless-stopped
+    environment:
+      - POSTGRES_MULTIPLE_DATABASES=${USERS_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}    
+    volumes:
+      - ./scripts/docker-postgresql-multiple-databases:/docker-entrypoint-initdb.d
+      - ./pgdata:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    networks:
+      justus_network:
+        aliases:
+          - ${POSTGRES_HOST}    
+
   rabbitmq:
     image: rabbitmq:3.10.18-management
     container_name: rabbitmq
@@ -17,3 +42,86 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
       - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=${RABBITMQ_DISK_FREE_LIMIT}
+    networks:
+      justus_network:
+        aliases:
+          - ${RABBITMQ_HOST}
+
+  justus_gateway:
+    labels: *labels
+    hostname: ${GATEWAY_HOST}
+    container_name: justus_gateway
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: development
+    env_file:
+      - .env
+    ports:
+      - ${GATEWAY_PORT}:${GATEWAY_PORT}
+    networks:
+      justus_network:
+        aliases:
+          - ${GATEWAY_HOST}
+    volumes:
+      - ./apps/gateway:/app/apps/gateway
+      - ./libs:/app/libs
+      - ./nest-cli.json:/app/nest-cli.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./package.json:/app/package.json
+      - ./.env:/app/.env
+    restart: unless-stopped
+    healthcheck:
+      test: wget -q --tries=1 --spider ${GATEWAY_HOST}:${GATEWAY_PORT}/healthcheck || exit 1
+      interval: 30s
+      timeout: 2s
+      retries: 3
+    command: ['npm', 'run', 'start:gateway:dev']
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_started
+      justus_users:
+        condition: service_started
+        # condition: service_healthy
+      # rbac:
+      #   condition: service_started
+
+  justus_users:
+    labels: *labels
+    build:
+      context: .
+      dockerfile: ./apps/users/Dockerfile
+      target: development
+    hostname: ${USERS_HOST}
+    container_name: justus_users
+    env_file:
+      - .env
+    ports:
+      - ${USERS_PORT}:${USERS_PORT}
+    networks:
+      justus_network:
+        aliases:
+          - ${USERS_HOST}
+    volumes:
+      - ./apps/users:/app/apps/users
+      - ./libs:/app/libs
+      - ./nest-cli.json:/app/nest-cli.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./package.json:/app/package.json
+      - ./.env:/app/.env
+    restart: unless-stopped
+    # healthcheck:
+    #   test: wget -q --tries=1 --spider ${USERS_HOST}:${USERS_PORT}/healthcheck || exit 1
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    command: ['npm', 'run', 'start:users:dev']
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_started
