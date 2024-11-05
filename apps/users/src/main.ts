@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { UserModule } from './user.module';
+import { AppModule } from './app.module';
 import { Transport } from '@nestjs/microservices';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(UserModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
   const user = configService.get('RABBITMQ_DEFAULT_USER');
   const pass = configService.get('RABBITMQ_DEFAULT_PASS');

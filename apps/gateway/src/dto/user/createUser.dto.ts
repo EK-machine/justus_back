@@ -7,10 +7,6 @@ export class CreateUserDto implements IUserCreate {
     @IsString({ message: VALIDATION_MSGS.NAME_IS_STRING })
     name: string;
 
-    @IsNotEmpty({ message: VALIDATION_MSGS.USERE_NAME_IS_EMPTY })
-    @IsString({ message: VALIDATION_MSGS.USERE_NAME_IS_STRING })
-    user_name: string;
-
     @IsNotEmpty({ message: VALIDATION_MSGS.PASS_IS_EMPTY })
     @IsString({ message: VALIDATION_MSGS.PASS_IS_STRING })
     password: string;

@@ -7,6 +7,7 @@ import { USER_CLIENT } from '@app/contracts/user';
 
 @Module({
   imports: [
+    ConfigModule.forRoot(),
     ClientsModule.registerAsync([
       {
         name: USER_CLIENT,

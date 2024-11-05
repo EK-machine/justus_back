@@ -7,4 +7,4 @@ import { UserModule } from './user/user.module';
   controllers: [],
   providers: [],
 })
-export class GatewayModule {}
+export class AppModule {}

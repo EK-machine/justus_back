@@ -10,12 +10,6 @@ export class UserEntity extends BaseEntity implements IUser {
     name: string;
 
     @Column({
-        unique: true,
-        type: 'character varying'
-    })
-    user_name: string;
-
-    @Column({
         type: 'character varying'
     })
     password: string;

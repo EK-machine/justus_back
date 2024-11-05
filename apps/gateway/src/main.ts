@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { GatewayModule } from './gateway.module';
+import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(GatewayModule);
+  const app = await NestFactory.create(AppModule);
+  app.use(cookieParser());
   const config = app.get<ConfigService>(ConfigService);
   const port = config.get('GATEWAY_PORT');
 

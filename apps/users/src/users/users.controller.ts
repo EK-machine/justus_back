@@ -1,14 +1,14 @@
 import { Controller } from '@nestjs/common';
-import { UserService } from './user.service';
+import { UsersService } from './users.service';
 import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
 import { ack } from 'libs/utils/helpers/ack';
-import { CreateUserDto, DeleteUserDto, UpdateUserDto, USER_MSGS } from '@app/contracts/user';
-import { IUserData } from 'libs/types/user.types';
+import { CreateUserDto, DeleteUserDto, UpdateUserDto, USER_MSGS, UserLoginDto } from '@app/contracts/user';
+import { IUserData, AtRt } from 'libs/types/user.types';
 import { IRmqResp } from 'libs/types/base.types';
 
 @Controller()
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+export class UsersController {
+  constructor(private readonly userService: UsersService) {}
 
   @MessagePattern({ cmd: USER_MSGS.GET_USERS })
   async get(@Ctx() context: RmqContext): Promise<IRmqResp<IUserData[] | null>> {
@@ -38,5 +38,17 @@ export class UserController {
   delete(@Ctx() context: RmqContext, @Payload() dto: DeleteUserDto ): Promise<IRmqResp<boolean>> {
     ack(context);
     return this.userService.delete(dto);
+  }
+
+  @MessagePattern({ cmd: USER_MSGS.LOGIN })
+  login(@Ctx() context: RmqContext, @Payload() dto: UserLoginDto ): Promise<IRmqResp<AtRt | null>> {
+    ack(context);
+    return this.userService.login(dto);
+  }
+
+  @MessagePattern({ cmd: USER_MSGS.LOGOUT})
+  logout(@Ctx() context: RmqContext, @Payload() rt: string): Promise<IRmqResp<boolean>> {
+    ack(context);
+    return this.userService.logout(rt);
   }
 }
