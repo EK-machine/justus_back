@@ -11,7 +11,7 @@ services:
     container_name: postgresql
     restart: unless-stopped
     environment:
-      - POSTGRES_MULTIPLE_DATABASES=${USERS_DB}
+      - POSTGRES_MULTIPLE_DATABASES=${USERS_DB},${RBAC_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}    
     volumes:
@@ -125,3 +125,40 @@ services:
         condition: service_started
       postgres:
         condition: service_started
+
+  justus_rbac:
+    labels: *labels
+    build:
+      context: .
+      dockerfile: ./apps/users/Dockerfile
+      target: development
+    hostname: ${RBAC_HOST}
+    container_name: justus_rbac
+    env_file:
+      - .env
+    ports:
+      - ${RBAC_PORT}:${RBAC_PORT}
+    networks:
+      justus_network:
+        aliases:
+          - ${RBAC_HOST}
+    volumes:
+      - ./apps/rbac:/app/apps/rbac
+      - ./libs:/app/libs
+      - ./nest-cli.json:/app/nest-cli.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.build.json:/app/tsconfig.build.json
+      - ./package.json:/app/package.json
+      - ./.env:/app/.env
+    restart: unless-stopped
+    # healthcheck:
+    #   test: wget -q --tries=1 --spider ${USERS_HOST}:${USERS_PORT}/healthcheck || exit 1
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+    command: ['npm', 'run', 'start:rbac:dev']
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_started        

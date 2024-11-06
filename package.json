@@ -11,6 +11,7 @@
     "start": "nest start",
     "start:gateway:dev": "nest start gateway --watch",
     "start:users:dev": "nest start users --watch",
+    "start:rbac:dev": "nest start rbac --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/apps/gateway/main",

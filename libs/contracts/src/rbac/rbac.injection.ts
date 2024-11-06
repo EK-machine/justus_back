@@ -1,0 +1,1 @@
+export const RBAC_CLIENT = Symbol('RBAC_CLIENT');

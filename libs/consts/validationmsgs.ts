@@ -6,6 +6,12 @@ export const VALIDATION_MSGS = {
     EMAIL_IS_EMPTY: 'мейл не указан',
     PASS_IS_STRING: 'Пароль должен быть строкой',
     PASS_IS_EMPTY: 'Пароль не указан',
+    WITH_RULES_IS_BOOL: '"Правила" должны быть значением верно/ложно',
+    ROLE_IS_STRING: 'Роль должна быть строкой',
+    ROLE_IS_EMPTY: 'Роль не указана',
+    ROLE_RULES_IS_ARRAY: 'Id правил должны быть массивом',
+    ROLE_RULES_IS_NUM: 'Id являются номерами',
+    ROLE_RULES_IS_POS_NUM: 'Id должны быть положительным числом',
 };
 
 export const CONSTS = {

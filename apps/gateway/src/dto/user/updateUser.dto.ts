@@ -12,6 +12,6 @@ export class UpdateUserDto implements Partial<Omit<CreateUserDto, 'password'>> {
     email?: string;
 }
 
-export interface UpdateUserBody extends UpdateUserDto {
+export class UpdateUserPayload extends UpdateUserDto {
     id: number;
 }

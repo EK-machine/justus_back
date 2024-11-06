@@ -10,6 +10,6 @@ async function bootstrap() {
   const port = config.get('GATEWAY_PORT');
 
   app.enableCors();
-  await app.listen(port);
+  await app.listen(port ?? 8080);
 }
 bootstrap();

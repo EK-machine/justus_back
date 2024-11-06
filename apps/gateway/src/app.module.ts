@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
+import { RbacModule } from './rbac/rbac.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), UserModule],
+  imports: [ConfigModule.forRoot(), UserModule, RbacModule],
   controllers: [],
   providers: [],
 })

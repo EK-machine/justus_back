@@ -25,7 +25,7 @@ export class UserController {
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
-  getById(@Param('id') id: number): Promise<IUserData> {
+  getById(@Param('id') id: string): Promise<IUserData> {
     return this.userService.getById(Number(id));
   }
 
@@ -42,7 +42,7 @@ export class UserController {
   async udate(
     @Param('id') id: string,
     @Body() body: UpdateUserDto,
-  ): Promise<{id: number}> {
+  ): Promise<IUserData> {
     return await this.userService.udate({ id: Number(id), ...body });
   }
 

@@ -5,7 +5,7 @@ import { IUserData, AtRt } from 'libs/types/user.types';
 import { firstValueFrom } from 'rxjs';
 import { CreateUserDto } from '../dto/user/createUser.dto';
 import { IRmqResp } from 'libs/types/base.types';
-import { UpdateUserBody } from '../dto/user/updateUser.dto';
+import { UpdateUserPayload } from '../dto/user/updateUser.dto';
 import { CONSTS } from 'libs/consts/validationmsgs';
 import { LoginDto } from '../dto/user/login.dto';
 
@@ -66,7 +66,7 @@ export class UserService {
     }
   }
 
-  async udate(updatePayload: UpdateUserBody): Promise<{id: number}> {
+  async udate(updatePayload: UpdateUserPayload): Promise<IUserData> {
     try {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.UPDATE_USER }, updatePayload);
       const data = await firstValueFrom<IRmqResp<IUserData | null>>(rmqResp);

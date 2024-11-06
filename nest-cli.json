@@ -45,6 +45,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/contracts/tsconfig.lib.json"
       }
+    },
+    "rbac": {
+      "type": "application",
+      "root": "apps/rbac",
+      "entryFile": "main",
+      "sourceRoot": "apps/rbac/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/rbac/tsconfig.app.json"
+      }
     }
   }
 }
