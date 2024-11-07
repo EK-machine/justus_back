@@ -1,7 +1,18 @@
 import { IBaseEntity } from "./base.types";
 
-export interface IRoleRules extends IBaseEntity {
+export interface IRoleId {
     role_id: number;
+}
+
+export interface IRoleToRole {
+    user_id: number;
+}
+
+export interface IRolesUsers extends IRoleId, IRoleToRole {}
+
+export interface IRolesUsersEntity extends IRolesUsers, IBaseEntity {}
+
+export interface IRoleRules extends IRoleId, IBaseEntity {
     rule_id: number;
 }
 
@@ -18,10 +29,6 @@ export interface IRoleRelational extends IBaseEntity {
 export interface IRule extends IBaseEntity {
     method: string;
     def: string;
-}
-export interface IRoleRules extends IBaseEntity {
-    role_id: number;
-    rule_id: number;
 }
 
 export interface IGetRoles {

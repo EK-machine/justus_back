@@ -1,13 +1,13 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AtRt, JwtPayload } from 'libs/types/user.types';
+import { IAtRt, IJwtPayload } from 'libs/types/user.types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { RtEntity } from '../entities/rt.entity';
 import * as bcrypt from 'bcrypt';
 import { IRmqResp } from 'libs/types/base.types';
-import { CONSTS } from 'libs/consts/validationmsgs';
+import { ERRORR_MSGS } from 'libs/consts/validationmsgs';
 
 @Injectable()
 export class AtRtService {
@@ -32,18 +32,18 @@ export class AtRtService {
   async verifyRt(rt: string): Promise<IRmqResp<{ email: string, iat: number; exp: number } | null>> {
     try {
       if(!rt) {
-        return { payload: null, errors: [CONSTS.NO_RT] };
+        return { payload: null, errors: [ERRORR_MSGS.NO_RT] };
       }
       const data = await this.jwtService.verifyAsync<{ email: string, iat: number; exp: number }>(rt, {
         secret: this.configService.get<string>('R_SECRET'),
       });
       return { payload: data };
     } catch (error) {
-      return { payload: null, errors: [CONSTS.RT_NOT_VERIFIED] };
+      return { payload: null, errors: [ERRORR_MSGS.RT_NOT_VERIFIED] };
     }
   }
 
-  async getTokens(jwtPayload: JwtPayload): Promise<IRmqResp<AtRt | null>>{
+  async getTokens(jwtPayload: IJwtPayload): Promise<IRmqResp<IAtRt | null>>{
     try {
       const [at, rt] = await Promise.all([
         this.jwtService.signAsync(jwtPayload, {
@@ -72,7 +72,7 @@ export class AtRtService {
 
       return { payload: { at, rt } };
     } catch (error) {
-      return { payload: null, errors: ['Не удалось получить токены'] };
+      return { payload: null, errors: ['не удалось получить токены'] };
     }
   }
 
@@ -82,40 +82,40 @@ export class AtRtService {
         where: { email },
       });
       if (!oldRt) {
-        return { payload: false, errors: [CONSTS.NO_MAIL_RT] };
+        return { payload: false, errors: [ERRORR_MSGS.NO_USER_MAIL_RT] };
       }
       const delRes = await this.rtRepo.delete({ email });
       if (!delRes.affected) {
-        return { payload: false, errors: [`Не удалсоь удалтить токен связанный с ${email}`] };
+        return { payload: false, errors: [`не удалсоь удалтить токен связанный с ${email}`] };
       }
       return { payload: true }
     } catch (error) {
-      return { payload: false, errors: [`Не удалось выйти c email ${email}`] };
+      return { payload: false, errors: [`не удалось выйти c email ${email}`] };
     }
   }
 
-  async refresh(rt: string): Promise<IRmqResp<AtRt | null>> {
+  async refresh(rt: string): Promise<IRmqResp<IAtRt | null>> {
     try {
       const verifyData = await this.verifyRt(rt);
       if(verifyData.errors && verifyData.errors.length > 0) {
         return { payload: null, errors: verifyData.errors };
       }
       if(!verifyData.payload || verifyData.payload.email.length === 0) {
-        return { payload: null, errors: [CONSTS.RT_NOT_VERIFIED] };
+        return { payload: null, errors: [ERRORR_MSGS.RT_NOT_VERIFIED] };
       }
       const oldUserRt = await this.rtRepo.findOne({
         where: { email: verifyData.payload.email },
       });
       if (!oldUserRt || !oldUserRt.rt) {
-        return { payload: null, errors: [CONSTS.NO_RT] };
+        return { payload: null, errors: [ERRORR_MSGS.NO_RT] };
       }
       const rtMatches = await bcrypt.compare(rt, oldUserRt.rt);
       if (!rtMatches) {
-        return { payload: null, errors: [CONSTS.RT_NO_MATCH] };
+        return { payload: null, errors: [ERRORR_MSGS.RT_NO_MATCH] };
       }
       return await this.getTokens({email: oldUserRt.email});
     } catch (error) {
-      return { payload: null, errors: ['Не удалось обновить токены'] };
+      return { payload: null, errors: ['не удалось обновить токены'] };
     }
   }
 }

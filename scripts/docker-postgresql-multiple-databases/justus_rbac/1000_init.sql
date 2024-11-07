@@ -14,3 +14,9 @@ CREATE TABLE public.role_rules (
   "role_id" INTEGER NOT NULL CONSTRAINT "fk_2_1" REFERENCES public.roles,
   "rule_id" INTEGER NOT NULL CONSTRAINT "fk_2_2" REFERENCES public.rules
 );
+
+CREATE TABLE public.roles_users (
+  "id" SERIAL NOT NULL CONSTRAINT "PK_2_4" PRIMARY KEY,
+  "role_id" INTEGER NOT NULL CONSTRAINT "fk_2_1" REFERENCES public.roles,
+  "user_id" INTEGER UNIQUE NOT NULL
+);

@@ -5,6 +5,7 @@ import { GetRolesDto } from '../dto/rbac/getRoles.dto';
 import { CreateRoleDto } from '../dto/rbac/createRole.dto';
 import { UpdateRoleDto } from '../dto/rbac/updateRole.dto';
 import { RulesToRoleDto } from '../dto/rbac/rulesToRole.dto';
+import { RoleToUserDto } from '../dto/rbac/roleToUser.dto';
 
 @Controller('rbac')
 @UsePipes(new ValidationPipe())
@@ -64,5 +65,17 @@ export class RbacController {
   @HttpCode(HttpStatus.OK)
   delRules(@Param('id') id: string, @Body() body: RulesToRoleDto): Promise<boolean> {
     return this.rbacService.delRules({ id: Number(id), ...body });
+  }
+
+  @Post('roles/add-roles/:id')
+  @HttpCode(HttpStatus.CREATED)
+  addRoles(@Param('id') role_id: string, @Body() body: RoleToUserDto): Promise<boolean> {
+    return this.rbacService.addRoles({ role_id: Number(role_id), user_id: body.user_id });
+  }
+
+  @Delete('roles/del-roles/:id')
+  @HttpCode(HttpStatus.CREATED)
+  delRoles(@Param('id') role_id: string, @Body() body: RoleToUserDto): Promise<boolean> {
+    return this.rbacService.delRoles({ role_id: Number(role_id), user_id: body.user_id });
   }
 }

@@ -1,12 +1,12 @@
 import { USER_CLIENT, USER_MSGS } from '@app/contracts/user';
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ClientProxy} from '@nestjs/microservices';
-import { IUserData, AtRt } from 'libs/types/user.types';
+import { IUserData, IAtRt } from 'libs/types/user.types';
 import { firstValueFrom } from 'rxjs';
 import { CreateUserDto } from '../dto/user/createUser.dto';
 import { IRmqResp } from 'libs/types/base.types';
 import { UpdateUserPayload } from '../dto/user/updateUser.dto';
-import { CONSTS } from 'libs/consts/validationmsgs';
+import { ERRORR_MSGS, userDoesNotExists, userExists } from 'libs/consts/validationmsgs';
 import { LoginDto } from '../dto/user/login.dto';
 
 @Injectable()
@@ -17,15 +17,14 @@ export class UserService {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.GET_USERS }, {});
       const data = await firstValueFrom<IRmqResp<IUserData[] | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        throw new NotFoundException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
       if(!data.payload) {
-        throw new NotFoundException('Пользователи не найдены');
+        throw new Error(ERRORR_MSGS.USERS_NOT_FOUD);
       }
-
       return data.payload;
     } catch (error) {
-      throw new NotFoundException('Пользователи не найдены');
+      throw new NotFoundException(`Ошибка получения пользователей: ${error.message}`);
     }
   }
 
@@ -34,15 +33,14 @@ export class UserService {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.GET_USER }, { id });
       const data = await firstValueFrom<IRmqResp<IUserData | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        throw new NotFoundException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
       if(!data.payload) {
-        throw new NotFoundException(`Пользователь с id ${id} не найден`);
+        throw new Error(`пользователь с id ${id} не найден`);
       }
       return data.payload;
-    }
-    catch (error) {
-      throw new NotFoundException(`Пользователь с id ${id} не найден`);
+    } catch (error) {
+      throw new NotFoundException(`Ошибка получения пользователя: ${error.message}`);
     }
   }
 
@@ -51,71 +49,79 @@ export class UserService {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.CREATE_USER }, createPayload);
       const data = await firstValueFrom<IRmqResp<{id: number} | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        if (data.errors[0] === CONSTS.USER_EXISTS) {
-          throw new ConflictException(`Пользователь с таким email ${createPayload.email} уже существует`)
-        }
-        throw new BadRequestException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
       if(!data.payload) {
-        throw new BadRequestException('Пользователь не создан');
+        throw new Error('пользователь не создан');
       }
       return data.payload;
     }
     catch (error) {
-      throw new NotFoundException('Пользователь не создан');
+      if(error.message === userExists(createPayload.email)) {
+        throw new ConflictException(`Ошибка создания пользователя: ${error.message}`)
+      }
+      throw new BadRequestException(`Ошибка создания пользователя: ${error.message}`);
     }
   }
 
   async udate(updatePayload: UpdateUserPayload): Promise<IUserData> {
     try {
+      if(updatePayload.id === 1) {
+        throw new Error(ERRORR_MSGS.MAIN_USER_UPDATE);
+      }
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.UPDATE_USER }, updatePayload);
       const data = await firstValueFrom<IRmqResp<IUserData | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        throw new BadRequestException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
       if(!data.payload) {
-        throw new BadRequestException('Пользователь не создан');
+        throw new Error(`пользователь с id ${updatePayload.id} не обновлён`);
       }
       return data.payload;
-    }
-    catch (error) {
-      throw new NotFoundException('Пользователь не создан');
+    } catch (error) {
+      if(error.message === ERRORR_MSGS.MAIN_USER_UPDATE) {
+        throw new ForbiddenException(`Ошибка обновления пользователя: ${error.message}`);
+      }
+      throw new BadRequestException(`Ошибка обновления пользователя: ${error.message}`);
     }
   }
 
   async delete(id: number): Promise<boolean> {
     try {
+      // todo delete roles_user
+      if(id === 1) {
+        throw new Error(ERRORR_MSGS.MAIN_USER_DEL);
+      }
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.DELETE_USER }, { id });
       const data = await firstValueFrom<IRmqResp<boolean>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        throw new BadRequestException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
       if(!data.payload) {
-        throw new BadRequestException(`Пользователя c id ${id} не удалось удалить`);
+        throw new Error(`пользователя c id ${id} не удалось удалить`);
       }
       return data.payload;
-    }
-    catch (error) {
-      throw new NotFoundException(`Пользователя c id ${id} не удалось удалить`);
+    } catch (error) {
+      if(error.message === ERRORR_MSGS.MAIN_USER_DEL) {
+        throw new ForbiddenException(`Ошибка удаления пользователя: ${error.message}`);
+      }
+      throw new BadRequestException(`Ошибка удаления пользователя: ${error.message}`);
     }
   }
 
-  async login(dto: LoginDto): Promise<AtRt> {
+  async login(dto: LoginDto): Promise<IAtRt> {
     try {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.LOGIN }, dto);
-      const data = await firstValueFrom<IRmqResp<AtRt | null>>(rmqResp);
+      const data = await firstValueFrom<IRmqResp<IAtRt | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        if (data.errors[0] === CONSTS.USER_DOES_NOT_EXISTS) {
-          throw new UnauthorizedException(`Ошибка входа: пользователя с email ${dto.email} не существует`)
-        }
-        if (data.errors[0] === CONSTS.USERS_INCORRECT_PASS) {
-          throw new ForbiddenException('Ошибка входа: не верные пароль или логи')
-        }
-        throw new ForbiddenException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
-      return data.payload as AtRt;
-    } catch(err) {
-      throw new ForbiddenException(`Ошибка входа: не удалось войти с email ${dto.email}`);
+      return data.payload as IAtRt;
+    } catch(error) {
+      if (error.message === userDoesNotExists(dto.email)) {
+        throw new UnauthorizedException(`Ошибка входа: ${error.message}`)
+      }
+      throw new ForbiddenException(`Ошибка входа: ${error.message}`);
     }
   }
 
@@ -124,42 +130,36 @@ export class UserService {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.LOGOUT }, rt);
       const data = await firstValueFrom<IRmqResp<boolean>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        if (data.errors[0] === CONSTS.NO_MAIL_RT) {
-          throw new ForbiddenException('Ошибка выхода: не существует токена связанного с email')
-        }
-        if (data.errors[0] === CONSTS.NO_RT) {
-          throw new UnauthorizedException('Ошибка выхода: токен не передан');
-        }
-        if (data.errors[0] === CONSTS.RT_NOT_VERIFIED) {
-          throw new BadRequestException('Ошибка выхода: токен не верно верифицирован');
-        }
-        throw new BadRequestException(data.errors[0]);
+        throw new Error(data.errors[0]);
       }
       return data.payload;
     } catch (error) {
-      throw new BadRequestException('Ошибка выхода: что-то пошло не так');
+      if (error.message === ERRORR_MSGS.NO_USER_MAIL_RT) {
+        throw new ForbiddenException(`Ошибка выхода: ${error.message}`)
+      }
+      if (error.message === ERRORR_MSGS.NO_RT) {
+        throw new UnauthorizedException(`Ошибка выхода: ${error.message}`);
+      }
+      throw new BadRequestException(`Ошибка выхода: ${error.message}`);
     }
   }
 
-  async refresh(rt: string): Promise<AtRt>{
+  async refresh(rt: string): Promise<IAtRt>{
     try {
       const rmqResp = await this.userClient.send({ cmd: USER_MSGS.REFRESH }, rt);
-      const data = await firstValueFrom<IRmqResp<AtRt | null>>(rmqResp);
+      const data = await firstValueFrom<IRmqResp<IAtRt | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
-        if (data.errors[0] === CONSTS.NO_RT) {
-          throw new UnauthorizedException('Ошибка обновления: токен не передан');
-        }
-        if (data.errors[0] === CONSTS.RT_NOT_VERIFIED) {
-          throw new BadRequestException('Ошибка обновления: токен не верно верифицирован');
-        }
-        if (data.errors[0] === CONSTS.RT_NO_MATCH) {
-          throw new ForbiddenException('Ошибка обновления: переданный токен не совпадает с текущим');
-        }
-        throw new BadRequestException(`Ошибка обновления: ${data.errors[0]}`);
+        throw new Error(data.errors[0]);
       }
-      return data.payload as AtRt;
+      return data.payload as IAtRt;
     } catch (error) {
-      throw new BadRequestException('Ошибка обновления: что-то пошло не так');
+      if (error.message === ERRORR_MSGS.NO_RT) {
+        throw new UnauthorizedException(`Ошибка обновления: ${error.message}`);
+      }
+      if (error.message === ERRORR_MSGS.RT_NO_MATCH) {
+        throw new ForbiddenException(`Ошибка обновления: ${error.message}`);
+      }
+      throw new BadRequestException(`Ошибка обновления: ${error.message}`);
     }
   }
 }

@@ -20,11 +20,11 @@ export interface IUserLogin {
 
 export interface ILogin extends IUserLogin {}
 
-export interface JwtPayload { email: string }
+export interface IJwtPayload { email: string }
 
-export interface AtRt { at: string; rt: string }
+export interface IAtRt { at: string; rt: string }
 
-export interface JwtVerify { jwt: string }
+export interface IVerifyAt { at: string }
 
 export interface IRt extends IBaseEntity {
     email: string;

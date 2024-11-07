@@ -1,4 +1,4 @@
-INSERT INTO public.users_roles
+INSERT INTO public.roles_users
   (role_id, user_id)
 VALUES
   (1, 1);

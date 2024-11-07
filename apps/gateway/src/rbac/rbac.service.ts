@@ -7,6 +7,7 @@ import { RBAC_CLIENT, RBAC_MSGS } from '@app/contracts/rbac';
 import { CreateRoleDto } from '../dto/rbac/createRole.dto';
 import { UpdateRolePayload } from '../dto/rbac/updateRole.dto';
 import { RulesToRoleDto, RulesToRolePayload } from '../dto/rbac/rulesToRole.dto';
+import { RoleToUserPayload } from '../dto/rbac/roleToUser.dto';
 
 @Injectable()
 export class RbacService {
@@ -141,7 +142,7 @@ export class RbacService {
 
       return data.payload;
     } catch (error) {
-      throw new NotFoundException(`Ошибка добавления прав: ${error.message}`);
+      throw new BadRequestException(`Ошибка добавления прав: ${error.message}`);
     }
   }
 
@@ -161,7 +162,50 @@ export class RbacService {
 
       return data.payload;
     } catch (error) {
-      throw new NotFoundException(`Ошибка добавления прав: ${error.message}`);
+      throw new BadRequestException(`Ошибка удаления прав: ${error.message}`);
+    }
+  }
+
+  async addRoles(dto: RoleToUserPayload): Promise<boolean> {
+    try {
+      if(dto.role_id === 1) {
+        throw new Error('ненвозможно добавить главную роль другим пользователям');
+      }
+      if(dto.user_id === 1) {
+        throw new Error('ненвозможно добавить роль главному пользователю');
+      }
+      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.ADD_ROLE_TO_USER }, dto);
+      const data = await firstValueFrom<IRmqResp<boolean>>(rmqResp);
+      if(data.errors && data.errors.length > 0) {
+        throw new Error(data.errors[0]);
+      }
+      if(!data.payload) {
+        throw new Error('роль не добавлена');
+      }
+
+      return data.payload;
+    } catch (error) {
+      throw new BadRequestException(`Ошибка добавления роли: ${error.message}`);
+    }
+  }
+
+  async delRoles(dto: RoleToUserPayload): Promise<boolean> {
+    try {
+      if(dto.role_id === 1 || dto.user_id === 1) {
+        throw new Error('ненвозможно снять главную роль');
+      }
+      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.DELETE_ROLE_FROM_USER }, dto);
+      const data = await firstValueFrom<IRmqResp<boolean>>(rmqResp);
+      if(data.errors && data.errors.length > 0) {
+        throw new Error(data.errors[0]);
+      }
+      if(!data.payload) {
+        throw new Error('роль не удалена');
+      }
+
+      return data.payload;
+    } catch (error) {
+      throw new BadRequestException(`Ошибка удаления роли: ${error.message}`);
     }
   }
 }

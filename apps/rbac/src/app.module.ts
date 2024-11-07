@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { RoleModule } from './role/role.module';
 import { RuleModule } from './rule/rule.module';
 import { RoleRulesModule } from './role_rules/role_rules.module';
+import { RolesUsersModule } from './roles_users/roles_users.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { RoleRulesModule } from './role_rules/role_rules.module';
     RoleModule,
     RuleModule,
     RoleRulesModule,
+    RolesUsersModule,
   ],
   controllers: [],
   providers: [],
