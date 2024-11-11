@@ -1,6 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { DeleteResult, Repository } from 'typeorm';
 import { RoleEntity } from '../entities/role.entity';
 import { IRmqResp } from 'libs/types/base.types';
 import { IGetRole, IRole, IRoleRelational } from 'libs/types/rbac.types';
@@ -8,6 +8,7 @@ import { RoleRulesEntity } from '../entities/role_rules.entity';
 import { RuleEntity } from '../entities/rule.entity';
 import { CreateRoleDto, DeleteRoleDto, UpdateRoleDto } from '@app/contracts/rbac';
 import { RoleRulesService } from '../role_rules/role_rules.service';
+import { RolesUsersService } from '../roles_users/roles_users.service';
 
 @Injectable()
 export class RoleService {
@@ -15,6 +16,8 @@ export class RoleService {
     @InjectRepository(RoleEntity) private readonly roleRepo: Repository<RoleEntity>,
     @Inject(forwardRef(() => RoleRulesService))
     private readonly roleRulesService: RoleRulesService,
+    @Inject(forwardRef(() => RolesUsersService))
+    private readonly rolesUsersService: RolesUsersService,
   ) {}
 
   async get(withRules: boolean = false): Promise<IRmqResp<IRole[] | null>> {
@@ -115,12 +118,25 @@ export class RoleService {
         return { payload: false, errors: [`роли c id ${dto.id} для удаления не существует`] };
       }
 
+      const rolesUsers = await this.rolesUsersService.getRolesUsers(dto.id);
+      const delResArr: DeleteResult[] = [];
+
       if(role.roleRules.length > 0) {
         const roleRuleIds = role.roleRules.map(roleRule => roleRule.id);
-        const delResArr = await Promise.all([
+
+        const [roleRulesDelRes, roleUsersDelRes] = await Promise.all([
           this.roleRulesService.deleteMany(roleRuleIds),
-          this.roleRepo.delete(dto.id)
+          rolesUsers.length > 0 && this.rolesUsersService.delRoleToUserByRoleId(dto.id),
         ]);
+
+        delResArr.push(roleRulesDelRes);
+        if(roleUsersDelRes) {
+          delResArr.push(roleUsersDelRes);
+        }
+
+        const roleDelRes = await this.roleRepo.delete(dto.id);
+        delResArr.push(roleDelRes);
+        
         const delRes = delResArr.every(res => !!res.affected);
         if(!delRes) {
           return { payload: false, errors: [`роль c id ${dto.id} и отношения к правам ${roleRuleIds.join(', ')} не удалось удалить`] };
@@ -128,9 +144,19 @@ export class RoleService {
         return { payload: delRes };
       }
 
-      const deleteResult = await this.roleRepo.delete(dto.id);
+      if(rolesUsers.length > 0) {
+        const roleUsersDelRes = await this.rolesUsersService.delRoleToUserByRoleId(dto.id);
+        if(roleUsersDelRes) {
+          delResArr.push(roleUsersDelRes);
+        }
+      }
 
-      if(!deleteResult.affected) {
+      const roleDelRes = await this.roleRepo.delete(dto.id);
+      delResArr.push(roleDelRes);
+
+      const delRes = delResArr.every(res => !!res.affected);
+
+      if(!delRes) {
         return { payload: false, errors: [`роль c id ${dto.id} не удалось удалить`] };
       }
       

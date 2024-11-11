@@ -5,6 +5,7 @@ import { RoleModule } from './role/role.module';
 import { RuleModule } from './rule/rule.module';
 import { RoleRulesModule } from './role_rules/role_rules.module';
 import { RolesUsersModule } from './roles_users/roles_users.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { RolesUsersModule } from './roles_users/roles_users.module';
     RuleModule,
     RoleRulesModule,
     RolesUsersModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],

@@ -8,4 +8,5 @@ export const USER_MSGS = {
     LOGOUT: 'LOGOUT',
     VERIFY: 'VERIFY',
     REFRESH: 'REFRESH',
+    GET_ID_BY_AT: 'GET_ID_BY_AT',
 }

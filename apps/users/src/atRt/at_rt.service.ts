@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { RtEntity } from '../entities/rt.entity';
 import * as bcrypt from 'bcrypt';
 import { IRmqResp } from 'libs/types/base.types';
-import { ERRORR_MSGS } from 'libs/consts/validationmsgs';
+import { ERRORR_MSGS } from 'libs/consts/error.msgs';
 
 @Injectable()
 export class AtRtService {
@@ -17,12 +17,9 @@ export class AtRtService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async verifyAt(jwt: string): Promise<{ exp: number }> {
-    if(!jwt) {
-      throw new UnauthorizedException('Авторизируйтесь для продолжения');
-    }
+  async verifyAt(at: string): Promise<{ exp: number }> {
     try {
-      const { exp } = await this.jwtService.verifyAsync<{ exp: number }>(jwt);
+      const { exp } = await this.getAtData(at);
       return { exp };
     } catch(error){
       throw new UnauthorizedException('Авторизируйтесь для продолжения');
@@ -116,6 +113,18 @@ export class AtRtService {
       return await this.getTokens({email: oldUserRt.email});
     } catch (error) {
       return { payload: null, errors: ['не удалось обновить токены'] };
+    }
+  }
+
+  async getAtData(at: string): Promise<{ email: string, exp: number }> {
+    if(!at) {
+      throw new UnauthorizedException('Авторизируйтесь для продолжения');
+    }
+    try {
+      const { email, exp } = await this.jwtService.verifyAsync<{ email: string, exp: number }>(at);
+      return { email, exp };
+    } catch(error){
+      throw new UnauthorizedException('Авторизируйтесь для продолжения');
     }
   }
 }

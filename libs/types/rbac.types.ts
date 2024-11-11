@@ -1,14 +1,15 @@
+import { Methods } from "libs/consts/methods";
 import { IBaseEntity } from "./base.types";
 
 export interface IRoleId {
     role_id: number;
 }
 
-export interface IRoleToRole {
+export interface IUserId {
     user_id: number;
 }
 
-export interface IRolesUsers extends IRoleId, IRoleToRole {}
+export interface IRolesUsers extends IRoleId, IUserId {}
 
 export interface IRolesUsersEntity extends IRolesUsers, IBaseEntity {}
 
@@ -56,4 +57,8 @@ export interface IRulesToRole {
 
 export interface IRulesToRoleDto extends IRulesToRole {
     id: number;
+}
+
+export interface ICheckUserRole extends IUserId {
+    methods: Methods[];
 }

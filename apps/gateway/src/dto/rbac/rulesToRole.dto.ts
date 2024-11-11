@@ -1,7 +1,6 @@
 import { IsArray, IsInt, IsPositive } from "class-validator";
-import { VALIDATION_MSGS } from "libs/consts/validationmsgs";
+import { VALIDATION_MSGS } from "libs/consts/validation.msgs";
 import { IRulesToRole } from "libs/types/rbac.types";
-
 
 export class RulesToRoleDto implements IRulesToRole {
     @IsArray({ message: VALIDATION_MSGS.ROLE_RULES_IS_ARRAY })

@@ -19,7 +19,7 @@ export class RoleRulesService {
     try {
       return await this.roleRulesRepo.delete({ id: In(ids) });
     } catch (error) {
-      throw new BadRequestException(error);
+      return { raw: null, affected: 0 };
     }
   }
 

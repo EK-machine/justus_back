@@ -24,6 +24,8 @@ export interface IJwtPayload { email: string }
 
 export interface IAtRt { at: string; rt: string }
 
+export interface ILoginResp { atrt: IAtRt, userId: number }
+
 export interface IVerifyAt { at: string }
 
 export interface IRt extends IBaseEntity {

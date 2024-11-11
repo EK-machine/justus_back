@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString, IsEmail, IsBoolean, IsOptional } from "class-validator";
-import { VALIDATION_MSGS } from "libs/consts/validationmsgs";
+import { IsBoolean, IsOptional } from "class-validator";
+import { VALIDATION_MSGS } from "libs/consts/validation.msgs";
 import { IGetRoles } from "libs/types/rbac.types";
 
 export class GetRolesDto implements IGetRoles {

@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, IsEmail } from "class-validator";
-import { VALIDATION_MSGS } from "libs/consts/validationmsgs";
+import { VALIDATION_MSGS } from "libs/consts/validation.msgs";
 import { IUserCreate } from "libs/types/user.types";
 
 export class CreateUserDto implements IUserCreate {

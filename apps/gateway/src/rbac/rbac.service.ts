@@ -6,7 +6,7 @@ import { IRole, IRule } from 'libs/types/rbac.types';
 import { RBAC_CLIENT, RBAC_MSGS } from '@app/contracts/rbac';
 import { CreateRoleDto } from '../dto/rbac/createRole.dto';
 import { UpdateRolePayload } from '../dto/rbac/updateRole.dto';
-import { RulesToRoleDto, RulesToRolePayload } from '../dto/rbac/rulesToRole.dto';
+import { RulesToRolePayload } from '../dto/rbac/rulesToRole.dto';
 import { RoleToUserPayload } from '../dto/rbac/roleToUser.dto';
 
 @Injectable()
@@ -206,6 +206,15 @@ export class RbacService {
       return data.payload;
     } catch (error) {
       throw new BadRequestException(`Ошибка удаления роли: ${error.message}`);
+    }
+  }
+
+  async deleteRolesUser(userId: number): Promise<IRmqResp<boolean>> {
+    try {
+      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.DELETE_ROLES_USERS }, userId);
+      return await firstValueFrom<IRmqResp<boolean>>(rmqResp);
+    } catch (error) {
+      return { payload: false, errors: [error.message] };
     }
   }
 }

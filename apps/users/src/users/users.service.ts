@@ -1,13 +1,13 @@
 import { CreateUserDto, DeleteUserDto, UpdateUserDto, UserLoginDto } from '@app/contracts/user';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { Repository } from 'typeorm';
-import { IAtRt, IUserData } from 'libs/types/user.types';
+import { ILoginResp, IUserData } from 'libs/types/user.types';
 import { IRmqResp } from 'libs/types/base.types';
-import { ERRORR_MSGS, userDoesNotExists, userExists } from 'libs/consts/validationmsgs';
 import * as bcrypt from 'bcrypt'; 
 import { AtRtService } from '../atRt/at_rt.service';
+import { ERRORR_MSGS, userDoesNotExists, userExists } from 'libs/consts/error.msgs';
 
 @Injectable()
 export class UsersService {
@@ -56,7 +56,6 @@ export class UsersService {
         }
       }
 
-      // todo добавить роль
       const hashedPassword = await this.hashPass(dto.password);
       const newUser = await this.userRepo.save({...dto, password: hashedPassword});
       return { payload: {id: newUser.id} };
@@ -88,7 +87,6 @@ export class UsersService {
       if(!userRmqResp.payload) {
         return { payload: false, errors: [`пользователя c id ${dto.id} для удаления не существует`] };
       }
-
       const deleteResult = await this.userRepo.delete(dto.id);
 
       if(!deleteResult.affected) {
@@ -101,7 +99,7 @@ export class UsersService {
     }
   }
 
-  async login(dto: UserLoginDto): Promise<IRmqResp<IAtRt | null>> {
+  async login(dto: UserLoginDto): Promise<IRmqResp<ILoginResp | null>> {
     try {
       const {password, email} = dto;
       const user = await this.userRepo.findOne({
@@ -122,7 +120,11 @@ export class UsersService {
         return { payload: null, errors: [atRt.errors[0]] };
       }
 
-      return { payload: atRt.payload as IAtRt };
+      if(!atRt.payload) {
+        return { payload: null, errors: [`не удалось войти c email ${dto.email}`] };
+      }
+
+      return { payload: {atrt: atRt.payload, userId: user.id } };
     } catch(error) {
       return { payload: null, errors: [`не удалось войти c email ${dto.email}`] };
     }
@@ -144,6 +146,23 @@ export class UsersService {
       return { payload: true };
     } catch(error) {
       return { payload: false, errors: [`не удалось выйти - проблема с токеном`] };
+    }
+  }
+
+  async getIdByAt(at: string): Promise<number> {
+    try {
+      const { email } = await this.atRtService.getAtData(at);
+      const user = await this.userRepo.findOne({
+        where: {
+          email
+        }
+      });
+      if(!user) {
+        throw new UnauthorizedException('Пользователя не существует');
+      }
+      return user.id;
+    } catch(error) {
+      throw new UnauthorizedException('Авторизируйтесь для продолжения');
     }
   }
 

@@ -1,6 +1,6 @@
 import { IsString, IsEmail, IsOptional } from "class-validator";
-import { VALIDATION_MSGS } from "libs/consts/validationmsgs";
 import { CreateUserDto } from "./createUser.dto";
+import { VALIDATION_MSGS } from "libs/consts/validation.msgs";
 
 export class UpdateUserDto implements Partial<Omit<CreateUserDto, 'password'>> {
     @IsOptional()

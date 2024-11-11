@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
 import { ack } from 'libs/utils/helpers/ack';
 import { CreateUserDto, DeleteUserDto, UpdateUserDto, USER_MSGS, UserLoginDto } from '@app/contracts/user';
-import { IUserData, IAtRt } from 'libs/types/user.types';
+import { IUserData, IAtRt, ILoginResp } from 'libs/types/user.types';
 import { IRmqResp } from 'libs/types/base.types';
 
 @Controller()
@@ -41,7 +41,7 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: USER_MSGS.LOGIN })
-  login(@Ctx() context: RmqContext, @Payload() dto: UserLoginDto ): Promise<IRmqResp<IAtRt | null>> {
+  login(@Ctx() context: RmqContext, @Payload() dto: UserLoginDto ): Promise<IRmqResp<ILoginResp | null>> {
     ack(context);
     return this.userService.login(dto);
   }
@@ -50,5 +50,11 @@ export class UsersController {
   logout(@Ctx() context: RmqContext, @Payload() rt: string): Promise<IRmqResp<boolean>> {
     ack(context);
     return this.userService.logout(rt);
+  }
+
+  @MessagePattern({ cmd: USER_MSGS.GET_ID_BY_AT})
+  getIdByAt(@Ctx() context: RmqContext, @Payload() at: string): Promise<number> {
+    ack(context);
+    return this.userService.getIdByAt(at);
   }
 }

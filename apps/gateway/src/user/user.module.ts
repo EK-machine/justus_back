@@ -4,10 +4,12 @@ import { UserService } from './user.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { USER_CLIENT } from '@app/contracts/user';
+import { RBAC_CLIENT } from '@app/contracts/rbac';
+import { JwtModule } from '@nestjs/jwt';
+import { RbacModule } from '../rbac/rbac.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
     ClientsModule.registerAsync([
       {
         name: USER_CLIENT,
@@ -28,8 +30,29 @@ import { USER_CLIENT } from '@app/contracts/user';
           }
         }},
         inject: [ConfigService]
+      },
+      {
+        name: RBAC_CLIENT,
+        imports: [ConfigModule],
+        useFactory:(configService: ConfigService) => {
+          const user = configService.get('RABBITMQ_DEFAULT_USER');
+          const pass = configService.get('RABBITMQ_DEFAULT_PASS');
+          const host = configService.get('RABBITMQ_HOST');
+          const queue = configService.get('RBAC_RMQ_QUEUE');
+          return {
+          transport: Transport.RMQ,
+          options: {
+            urls: [`amqp://${user}:${pass}@${host}`],
+            queue,
+            queueOptions: {
+              durable: false,
+            },
+          }
+        }},
+        inject: [ConfigService]
       }
-    ])
+    ]),
+    RbacModule,
   ],
   controllers: [UserController],
   providers: [UserService],

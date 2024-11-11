@@ -73,7 +73,7 @@ services:
       - ./.env:/app/.env
     restart: unless-stopped
     healthcheck:
-      test: wget -q --tries=1 --spider ${GATEWAY_HOST}:${GATEWAY_PORT}/healthcheck || exit 1
+      test: wget -q --tries=1 --spider ${GATEWAY_HOST}:${GATEWAY_PORT}/health || exit 1
       interval: 30s
       timeout: 2s
       retries: 3
@@ -84,10 +84,9 @@ services:
       postgres:
         condition: service_started
       justus_users:
-        condition: service_started
-        # condition: service_healthy
-      # rbac:
-      #   condition: service_started
+        condition: service_healthy
+      justus_rbac:
+        condition: service_healthy
 
   justus_users:
     labels: *labels
@@ -114,11 +113,11 @@ services:
       - ./package.json:/app/package.json
       - ./.env:/app/.env
     restart: unless-stopped
-    # healthcheck:
-    #   test: wget -q --tries=1 --spider ${USERS_HOST}:${USERS_PORT}/healthcheck || exit 1
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 3
+    healthcheck:
+      test: wget -q --tries=1 --spider ${USERS_HOST}:${USERS_PORT}/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: ['npm', 'run', 'start:users:dev']
     depends_on:
       rabbitmq:
@@ -151,11 +150,11 @@ services:
       - ./package.json:/app/package.json
       - ./.env:/app/.env
     restart: unless-stopped
-    # healthcheck:
-    #   test: wget -q --tries=1 --spider ${USERS_HOST}:${USERS_PORT}/healthcheck || exit 1
-    #   interval: 10s
-    #   timeout: 5s
-    #   retries: 3
+    healthcheck:
+      test: wget -q --tries=1 --spider ${RBAC_HOST}:${RBAC_PORT}/health || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
     command: ['npm', 'run', 'start:rbac:dev']
     depends_on:
       rabbitmq:

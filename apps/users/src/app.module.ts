@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AtRtModule } from './atRt/at_rt.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AtRtModule } from './atRt/at_rt.module';
     }),
     UsersModule,
     AtRtModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],

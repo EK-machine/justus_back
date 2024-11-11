@@ -1,5 +1,5 @@
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
-import { VALIDATION_MSGS } from "libs/consts/validationmsgs";
+import { VALIDATION_MSGS } from "libs/consts/validation.msgs";
 import { ILogin } from "libs/types/user.types";
 
 export class LoginDto implements ILogin {
