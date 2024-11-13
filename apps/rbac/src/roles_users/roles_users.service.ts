@@ -1,6 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, Repository } from 'typeorm';
+import { DeleteResult, QueryRunner, Repository } from 'typeorm';
 import { RoleService } from '../role/role.service';
 import { IRmqResp } from 'libs/types/base.types';
 import { RolesUsersEntity } from '../entities/roles_users.entity';
@@ -14,7 +14,6 @@ export class RolesUsersService {
     @InjectRepository(RolesUsersEntity) private readonly rolesUsersRepo: Repository<RolesUsersEntity>,
     @Inject(forwardRef(() => RoleService))
     private readonly roleService: RoleService,
-    
   ) {}
 
   async getRolesUsers(roleId: number) {
@@ -65,11 +64,15 @@ export class RolesUsersService {
     }
   }
 
-  async delRoleToUserByRoleId(role_id: number): Promise<DeleteResult> {
+  async delRoleToUserByRoleId(role_id: number, queryRunner: QueryRunner): Promise<IRmqResp<boolean>> {
     try {
-      return await this.rolesUsersRepo.delete({role_id});
+      const delRes = await queryRunner.manager.delete(RolesUsersEntity, { id: role_id });
+      if(!delRes.affected) {
+        return { payload: false, errors: ['не удалось удалить связи ролей с пользователями'] };
+      }
+      return { payload: true };
     } catch (error) {
-       return {raw: null, affected: 0};
+      return { payload: false, errors: ['не удалось удалить связи ролей с пользователями'] };
     }
   }
 
@@ -117,7 +120,6 @@ export class RolesUsersService {
       }
 
       return {payload: true};
-
     } catch (error) {
       return {payload: false, errors: ['не удалить связь роли с пользователем']};
     }

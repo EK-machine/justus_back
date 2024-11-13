@@ -2,8 +2,8 @@ import { CreateUserDto, DeleteUserDto, UpdateUserDto, UserLoginDto } from '@app/
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
-import { Repository } from 'typeorm';
-import { ILoginResp, IUserData } from 'libs/types/user.types';
+import { DataSource, Repository, UpdateResult } from 'typeorm';
+import { ILoginResp, IUser, IUserData } from 'libs/types/user.types';
 import { IRmqResp } from 'libs/types/base.types';
 import * as bcrypt from 'bcrypt'; 
 import { AtRtService } from '../atRt/at_rt.service';
@@ -14,6 +14,7 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity) private readonly userRepo: Repository<UserEntity>,
     private readonly atRtService: AtRtService,
+    private readonly dataSource: DataSource,
   ) {}
   async get(): Promise<IRmqResp<IUserData[] | null>> {
     try {
@@ -81,21 +82,49 @@ export class UsersService {
     }
   }
 
-  async delete(dto: DeleteUserDto): Promise<IRmqResp<boolean>> {
+  async delete(dto: DeleteUserDto): Promise<IRmqResp<IUser | null>> {
     try {
-      const userRmqResp = await this.getById(dto.id);
-      if(!userRmqResp.payload) {
-        return { payload: false, errors: [`пользователя c id ${dto.id} для удаления не существует`] };
+      const user = await this.userRepo.findOne({
+        where: {
+          id: dto.id,
+        }
+      });
+
+      if(!user) {
+        return { payload: null, errors: [`пользователя c id ${dto.id} для удаления не существует`] };
       }
+
       const deleteResult = await this.userRepo.delete(dto.id);
 
       if(!deleteResult.affected) {
-        return { payload: false, errors: [`пользователя c id ${dto.id} не удалось удалить`] };
+        return { payload: null, errors: [`пользователя c id ${dto.id} не удалось удалить`] };
       }
       
-      return { payload: true };
+      return { payload: user };
     } catch (error) {
-      return { payload: false, errors: [`пользователя c id ${dto.id} не удалось удалить`] };
+      return { payload: null, errors: [`пользователя c id ${dto.id} не удалось удалить`] };
+    }
+  }
+
+  async restore(payload: IUser): Promise<IRmqResp<boolean>> {
+    try {
+      const userEntity = new UserEntity();
+      userEntity.email = payload.email;
+      userEntity.name = payload.name;
+      userEntity.password = payload.password;
+
+      const oldUser = await this.userRepo.save(userEntity);
+      if(!oldUser) {
+        return {payload: false, errors: ['не удалось удалить а затем восстановить пользователя']}
+      }
+
+      const updateResult = await this.userRepo.update({email: oldUser.email}, {id: payload.id});
+      if(!updateResult.affected) {
+        return {payload: false, errors: ['не удалось удалить а затем восстановить пользователя']}
+      }
+      return { payload: true }
+    } catch (error) {
+      return {payload: false, errors: [error.message]}
     }
   }
 

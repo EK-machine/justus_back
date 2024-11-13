@@ -4,6 +4,6 @@ export interface IBaseEntity {
 
 export type IRmqResp<T> = {
     payload: T;
-    errors?: Array<string>;
+    errors?: string[];
 };
   

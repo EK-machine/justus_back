@@ -3,7 +3,7 @@ import { UsersService } from './users.service';
 import { Ctx, MessagePattern, Payload, RmqContext } from '@nestjs/microservices';
 import { ack } from 'libs/utils/helpers/ack';
 import { CreateUserDto, DeleteUserDto, UpdateUserDto, USER_MSGS, UserLoginDto } from '@app/contracts/user';
-import { IUserData, IAtRt, ILoginResp } from 'libs/types/user.types';
+import { IUserData, IAtRt, ILoginResp, IUser } from 'libs/types/user.types';
 import { IRmqResp } from 'libs/types/base.types';
 
 @Controller()
@@ -35,9 +35,15 @@ export class UsersController {
   }
 
   @MessagePattern({ cmd: USER_MSGS.DELETE_USER })
-  delete(@Ctx() context: RmqContext, @Payload() dto: DeleteUserDto ): Promise<IRmqResp<boolean>> {
+  delete(@Ctx() context: RmqContext, @Payload() dto: DeleteUserDto ): Promise<IRmqResp<IUser | null>> {
     ack(context);
     return this.userService.delete(dto);
+  }
+
+  @MessagePattern({ cmd: USER_MSGS.RESTORE_USER })
+  restore(@Ctx() context: RmqContext, @Payload() payload: IUser ): Promise<IRmqResp<boolean | null>> {
+    ack(context);
+    return this.userService.restore(payload);
   }
 
   @MessagePattern({ cmd: USER_MSGS.LOGIN })
