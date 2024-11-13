@@ -1,6 +1,6 @@
-import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, In, Repository } from 'typeorm';
+import { DeleteResult, In, QueryRunner, Repository } from 'typeorm';
 import { RoleRulesEntity } from '../entities/role_rules.entity';
 import { RulesToRoleDto } from '@app/contracts/rbac';
 import { RoleService } from '../role/role.service';
@@ -15,11 +15,15 @@ export class RoleRulesService {
     private readonly roleService: RoleService,
   ) {}
 
-  async deleteMany(ids: number[]): Promise<DeleteResult> {
+  async deleteMany(ids: number[], queryRunner: QueryRunner): Promise<IRmqResp<boolean>> {
     try {
-      return await this.roleRulesRepo.delete({ id: In(ids) });
+      const delRes = await queryRunner.manager.delete(RoleRulesEntity, { id: In(ids) });
+      if(!delRes.affected) {
+        return { payload: false, errors: ['не удалось удалить связи ролей с правилами'] };
+      }
+      return { payload: true };
     } catch (error) {
-      return { raw: null, affected: 0 };
+      return { payload: false, errors: [error.message] };
     }
   }
 
@@ -39,7 +43,7 @@ export class RoleRulesService {
         return {payload: false, errors: ['указанные права уже привязаны к роли']};
       }
       const dataToAdd = ruleIdsToAdd.map(ruleId => ({role_id: id, rule_id: ruleId}));
-
+      // todo add check
       const res = await Promise.all(dataToAdd.map(el => this.roleRulesRepo.save({...el})));
 
       return {payload: true};

@@ -5,8 +5,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { USER_CLIENT } from '@app/contracts/user';
 import { RBAC_CLIENT } from '@app/contracts/rbac';
-import { JwtModule } from '@nestjs/jwt';
-import { RbacModule } from '../rbac/rbac.module';
+import { Orchestrator } from '../orchestrator/orchestrator';
 
 @Module({
   imports: [
@@ -52,9 +51,8 @@ import { RbacModule } from '../rbac/rbac.module';
         inject: [ConfigService]
       }
     ]),
-    RbacModule,
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, Orchestrator],
 })
 export class UserModule {}

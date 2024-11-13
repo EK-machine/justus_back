@@ -208,13 +208,4 @@ export class RbacService {
       throw new BadRequestException(`Ошибка удаления роли: ${error.message}`);
     }
   }
-
-  async deleteRolesUser(userId: number): Promise<IRmqResp<boolean>> {
-    try {
-      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.DELETE_ROLES_USERS }, userId);
-      return await firstValueFrom<IRmqResp<boolean>>(rmqResp);
-    } catch (error) {
-      return { payload: false, errors: [error.message] };
-    }
-  }
 }

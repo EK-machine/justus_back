@@ -1,20 +1,30 @@
 import { USER_CLIENT, USER_MSGS } from '@app/contracts/user';
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ClientProxy} from '@nestjs/microservices';
-import { IUserData, IAtRt, ILoginResp } from 'libs/types/user.types';
+import { IUserData, IAtRt, ILoginResp, IUser } from 'libs/types/user.types';
 import { firstValueFrom } from 'rxjs';
 import { CreateUserDto } from '../dto/user/createUser.dto';
 import { IRmqResp } from 'libs/types/base.types';
 import { UpdateUserPayload } from '../dto/user/updateUser.dto';
 import { LoginDto } from '../dto/user/login.dto';
-import { RbacService } from '../rbac/rbac.service';
 import { ERRORR_MSGS, userDoesNotExists, userExists } from 'libs/consts/error.msgs';
+import { Orchestrator } from '../orchestrator/orchestrator';
+import { RBAC_CLIENT, RBAC_MSGS } from '@app/contracts/rbac';
 
 @Injectable()
 export class UserService {
   constructor(
     @Inject(USER_CLIENT) private readonly userClient: ClientProxy,
-    private readonly rbacService: RbacService,
+    @Inject(RBAC_CLIENT) private readonly rbacClient: ClientProxy,
+    private readonly orchestrator: Orchestrator,
   ) {}
   async get(): Promise<IUserData[]> {
     try {
@@ -104,31 +114,35 @@ export class UserService {
       if(id === currentUserId) {
         throw new Error(ERRORR_MSGS.SAME_USER);
       }
-      const [userDelRmqResp, rolesUsersDelRmqResp] = await Promise.all([
-        this.userClient.send({ cmd: USER_MSGS.DELETE_USER }, { id }),
-        this.rbacService.deleteRolesUser(id),
-      ]);
+      const steps = [
+        {
+          cmd: USER_MSGS.DELETE_USER,
+          client: this.userClient,
+          payload: { id },
+          snapshotCmd: USER_MSGS.RESTORE_USER,
+          withResult: true,
+        },
+        {
+          cmd: RBAC_MSGS.DELETE_ROLES_USERS,
+          client: this.rbacClient,
+          payload: id,
+        }
+      ];
 
-      const userDelData = await firstValueFrom<IRmqResp<boolean>>(userDelRmqResp);
-
-      const errors: string[] = [];
-      if(userDelData.errors && userDelData.errors.length > 0) {
-        errors.push(userDelData.errors[0]);
-      }
-
-      if(!userDelData.payload) {
-        errors.push(`пользователя c id ${id} не удалось удалить`);
-      }
-
-      if(rolesUsersDelRmqResp.errors && rolesUsersDelRmqResp.errors.length > 0) {
-        errors.push(rolesUsersDelRmqResp.errors[0]);
-      }
-
+      const {errors, result} = await this.orchestrator.execute<IUser>(steps);
+      const allErrors: string[] = [];
       if(errors.length > 0) {
+        allErrors.push(...errors);
         throw new Error(errors.join('; '));
       }
-      
-      return userDelData.payload;
+      if(!result) {
+        allErrors.push(`пользователя c id ${id} не удалось удалить`);
+      }
+      if(allErrors.length > 0) {
+        throw new Error(allErrors.join('; '));
+      }
+
+      return !!result;
     } catch (error) {
       if(error.message === ERRORR_MSGS.MAIN_USER_DEL) {
         throw new ForbiddenException(`Ошибка удаления пользователя: ${error.message}`);
