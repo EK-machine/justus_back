@@ -76,14 +76,21 @@ export class UserController {
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<string> {
+  ): Promise<{
+    superAdmin: boolean,
+    at: string, 
+  }> {
     const key = this.configService.get<string>('SECRET_KEY') as string;
     const user_key = this.configService.get<string>('USER_ID_KEY') as string;
     const data = await this.userService.login(dto);
     
     response.cookie(key, data.atrt.rt, { httpOnly: true });
     response.cookie(user_key, data.userId, { httpOnly: true });
-    return data.atrt.at;
+    const superAdmin = data.userId === 1;
+    return {
+      superAdmin,
+      at: data.atrt.at, 
+    };
   }
 
   @UseGuards(AuthGuard)

@@ -8,8 +8,12 @@ async function bootstrap() {
   app.use(cookieParser());
   const config = app.get<ConfigService>(ConfigService);
   const port = config.get('GATEWAY_PORT');
+  const admin = config.get('ADMIN_ENDPOINT');
 
-  app.enableCors();
+  app.enableCors({
+    origin: admin,
+    credentials: true,
+  });
   await app.listen(port ?? 8080);
 }
 bootstrap();

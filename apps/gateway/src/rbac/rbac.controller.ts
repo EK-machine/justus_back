@@ -19,7 +19,7 @@ export class RbacController {
     private readonly rbacService: RbacService,
   ) {}
 
-  @Get('roles')
+  @Post('roles')
   @Method([Methods.RBAC_GET_ROLES])
   @HttpCode(HttpStatus.OK)
   getRoles(@Body() dto: GetRolesDto ): Promise<IRole[]> {
