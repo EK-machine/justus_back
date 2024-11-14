@@ -8,13 +8,14 @@ import { CreateRoleDto } from '../dto/rbac/createRole.dto';
 import { UpdateRolePayload } from '../dto/rbac/updateRole.dto';
 import { RulesToRolePayload } from '../dto/rbac/rulesToRole.dto';
 import { RoleToUserPayload } from '../dto/rbac/roleToUser.dto';
+import { GetRolesDto } from '../dto/rbac/getRoles.dto';
 
 @Injectable()
 export class RbacService {
   constructor(@Inject(RBAC_CLIENT) private readonly rbacClient: ClientProxy) {}
-  async getRoles(withRules: boolean = false): Promise<IRole[]> {
+  async getRoles(dto: GetRolesDto): Promise<IRole[]> {
     try {
-      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.GET_ROLES }, { withRules });
+      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.GET_ROLES }, dto);
       const data = await firstValueFrom<IRmqResp<IRole[] | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
         throw new Error(data.errors[0]);
@@ -29,9 +30,10 @@ export class RbacService {
     }
   }
 
-  async getRoleById(id: number, withRules: boolean = false): Promise<IRole> {
+  async getRoleById(id: number, dto: GetRolesDto): Promise<IRole> {
     try {
-      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.GET_ROLE }, { id, withRules });
+      const payload = { id, withRules: dto.withRules, withUsers: dto.withUsers };
+      const rmqResp = await this.rbacClient.send({ cmd: RBAC_MSGS.GET_ROLE }, payload);
       const data = await firstValueFrom<IRmqResp<IRole | null>>(rmqResp);
       if(data.errors && data.errors.length > 0) {
         throw new Error(data.errors[0]);

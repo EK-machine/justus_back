@@ -6,4 +6,8 @@ export class GetRolesDto implements IGetRoles {
     @IsOptional()
     @IsBoolean({ message: VALIDATION_MSGS.WITH_RULES_IS_BOOL })
     withRules: boolean;
+
+    @IsOptional()
+    @IsBoolean({ message: VALIDATION_MSGS.WITH_USERS_IS_BOOL })
+    withUsers: boolean;
 }

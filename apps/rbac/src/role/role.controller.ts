@@ -4,10 +4,8 @@ import { ack } from 'libs/utils/helpers/ack';
 import { RoleService } from './role.service';
 import { RBAC_MSGS } from '@app/contracts/rbac/rbac.messages';
 import { IRmqResp } from 'libs/types/base.types';
-import { IGetRole, IRole } from 'libs/types/rbac.types';
+import { IRole } from 'libs/types/rbac.types';
 import { CreateRoleDto, DeleteRoleDto, GetRoleDto, GetRolesDto, UpdateRoleDto } from '@app/contracts/rbac';
-import { IUserData } from 'libs/types/user.types';
-import { DeleteUserDto } from '@app/contracts/user';
 
 @Controller()
 export class RoleController {
@@ -16,7 +14,7 @@ export class RoleController {
   @MessagePattern({ cmd: RBAC_MSGS.GET_ROLES })
   get(@Ctx() context: RmqContext, @Payload() payload: GetRolesDto): Promise<IRmqResp<IRole[] | null>> {
     ack(context);
-    return this.roleService.get(payload.withRules);
+    return this.roleService.get(payload);
   }
 
   @MessagePattern({ cmd: RBAC_MSGS.GET_ROLE })

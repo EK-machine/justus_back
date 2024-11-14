@@ -1,6 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeleteResult, QueryRunner, Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { RoleService } from '../role/role.service';
 import { IRmqResp } from 'libs/types/base.types';
 import { RolesUsersEntity } from '../entities/roles_users.entity';
@@ -28,7 +28,7 @@ export class RolesUsersService {
     try {
       const { role_id, user_id } = payload;
       const [roleRmqResp, roleUser] = await Promise.all([
-        this.roleService.getById({id: role_id, withRules: false}),
+        this.roleService.getById({id: role_id, withRules: false, withUsers: false}),
         this.rolesUsersRepo.findOne({ where: { user_id }})
       ]);
       if(roleRmqResp.errors && roleRmqResp.errors.length > 0) {
@@ -84,7 +84,7 @@ export class RolesUsersService {
         return false;
       }
 
-      const rolesWithRules = await this.roleService.getById({id: userRoles.role_id, withRules: true});
+      const rolesWithRules = await this.roleService.getById({id: userRoles.role_id, withRules: true, withUsers: false});
       if(rolesWithRules.errors && rolesWithRules.errors.length > 0) {
         throw new UnauthorizedException(rolesWithRules.errors[0]);
       }
@@ -114,6 +114,11 @@ export class RolesUsersService {
 
   async deleteRolesUser(user_id: number): Promise<IRmqResp<boolean>> {
     try {
+      const userRoles = await this.rolesUsersRepo.find({ where: { user_id } });
+      if(userRoles.length === 0) {
+        return {payload: true};
+      }
+
       const delRes = await this.rolesUsersRepo.delete({user_id});
       if(!delRes.affected) {
         return {payload: false, errors: ['не удалить связь роли с пользователем']};

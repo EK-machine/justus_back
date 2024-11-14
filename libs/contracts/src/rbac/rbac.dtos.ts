@@ -3,9 +3,11 @@ import { IRulesToRoleDto, ICreateRole, IGetRole, IGetRoles, IUpdateRole, IRolesU
 
 export class GetRolesDto implements IGetRoles {
     withRules: boolean;
+    withUsers: boolean;
 }
 
 export class GetRoleDto implements IGetRole {
+    withUsers: boolean;
     withRules: boolean;
     id: number;
 }

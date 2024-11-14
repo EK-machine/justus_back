@@ -6,9 +6,10 @@ import { IRmqResp } from 'libs/types/base.types';
 import { IGetRole, IRole, IRoleRelational } from 'libs/types/rbac.types';
 import { RoleRulesEntity } from '../entities/role_rules.entity';
 import { RuleEntity } from '../entities/rule.entity';
-import { CreateRoleDto, DeleteRoleDto, UpdateRoleDto } from '@app/contracts/rbac';
+import { CreateRoleDto, DeleteRoleDto, GetRoleDto, GetRolesDto, UpdateRoleDto } from '@app/contracts/rbac';
 import { RoleRulesService } from '../role_rules/role_rules.service';
 import { RolesUsersService } from '../roles_users/roles_users.service';
+import { RolesUsersEntity } from '../entities/roles_users.entity';
 
 @Injectable()
 export class RoleService {
@@ -21,10 +22,10 @@ export class RoleService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async get(withRules: boolean = false): Promise<IRmqResp<IRole[] | null>> {
+  async get(payload: GetRolesDto): Promise<IRmqResp<IRole[] | null>> {
     try {
       let roles: IRole[] = [];
-      if(withRules) {
+      if(payload.withRules && !payload.withUsers) {
         roles = await this.roleRepo.createQueryBuilder('role')
         .leftJoin(
           RoleRulesEntity,
@@ -36,7 +37,35 @@ export class RoleService {
           'rule',
           'roleRules.rule_id = rule.id')
         .getMany();
-      } else {
+      }
+      if(payload.withUsers && !payload.withRules) {
+        roles = await this.roleRepo.createQueryBuilder('role')
+        .leftJoinAndMapMany(
+          'role.roleUsers',
+          RolesUsersEntity,
+          'roleUsers',
+          'role.id = roleUsers.role_id')
+        .getMany();
+      }
+      if(payload.withUsers && payload.withRules) {
+        roles = await this.roleRepo.createQueryBuilder('role')
+        .leftJoin(
+          RoleRulesEntity,
+          'roleRules',
+          'roleRules.role_id = role.id')
+        .leftJoinAndMapMany(
+          'role.rules',
+          RuleEntity,
+          'rule',
+          'roleRules.rule_id = rule.id')
+        .leftJoinAndMapMany(
+          'role.roleUsers',
+          RolesUsersEntity,
+          'roleUsers',
+          'role.id = roleUsers.role_id')  
+        .getMany();
+      }
+      if(!payload.withUsers && !payload.withRules) {
         roles = await this.roleRepo.find();
       }     
       return { payload: roles };
@@ -45,10 +74,12 @@ export class RoleService {
     }
   }
 
-  async getById({id, withRules = false}: IGetRole): Promise<IRmqResp<IRole | null>> {
+  async getById(payload: GetRoleDto): Promise<IRmqResp<IRole | null>> {
     try {
-      if(withRules) {
-        const role = await this.roleRepo.createQueryBuilder('role')
+      let role: IRole | null = null;
+      const { id, withRules, withUsers } = payload;
+      if(withRules && !withUsers) {
+        role = await this.roleRepo.createQueryBuilder('role')
         .leftJoin(
           RoleRulesEntity,
           'roleRules',
@@ -63,16 +94,53 @@ export class RoleService {
         if(!role) {
           return { payload: null, errors: [`роль с id ${id} и правилами не найдена`] };
         }
-        return {payload: role};
-      } else {
-        const role = await this.roleRepo.findOne({where: { id }});
+      }
+
+      if(withUsers && !withRules) {
+        role = await this.roleRepo.createQueryBuilder('role')
+        .leftJoinAndMapMany(
+          'role.roleUsers',
+          RolesUsersEntity,
+          'roleUsers',
+          'role.id = roleUsers.role_id')
+        .where('role.id = :id', { id })  
+        .getOne();
+        if(!role) {
+          return { payload: null, errors: [`роль с id ${id} и пользователями не найдена`] };
+        }
+      }
+
+      if(withUsers && withRules) {
+        role = await this.roleRepo.createQueryBuilder('role')
+        .leftJoin(
+          RoleRulesEntity,
+          'roleRules',
+          'roleRules.role_id = role.id')
+        .leftJoinAndMapMany(
+          'role.rules',
+          RuleEntity,
+          'rule',
+          'roleRules.rule_id = rule.id')
+        .leftJoinAndMapMany(
+          'role.roleUsers',
+          RolesUsersEntity,
+          'roleUsers',
+          'role.id = roleUsers.role_id')
+        .where('role.id = :id', { id })    
+        .getOne();
+        if(!role) {
+          return { payload: null, errors: [`роль с id ${id}, правилами и пользователями не найдена`] };
+        }
+      }
+      if(!withUsers && !withRules) {
+        role = await this.roleRepo.findOne({where: { id }});
         if(!role) {
           return { payload: null, errors: [`роль с id ${id} не найдена`] };
         }
-        return {payload: role};
-      }     
+      }
+      return {payload: role};
     } catch(error){
-      return { payload: null, errors: [`роль с id ${id} не найдена`] };
+      return { payload: null, errors: [`роль с id ${payload.id} не найдена`] };
     }
   }
 
@@ -90,7 +158,7 @@ export class RoleService {
 
   async udate(dto: UpdateRoleDto): Promise<IRmqResp<IRole | null>> {
     try {
-      const roleRmqResp  = await this.getById({id: dto.id, withRules: false});
+      const roleRmqResp  = await this.getById({id: dto.id, withRules: false, withUsers: false});
       if(!roleRmqResp.payload) {
         return { payload: null, errors: [`роли c id ${dto.id} для обновления не существует`] };
       }

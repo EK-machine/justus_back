@@ -23,14 +23,14 @@ export class RbacController {
   @Method([Methods.RBAC_GET_ROLES])
   @HttpCode(HttpStatus.OK)
   getRoles(@Body() dto: GetRolesDto ): Promise<IRole[]> {
-    return this.rbacService.getRoles(dto.withRules);
+    return this.rbacService.getRoles(dto);
   }
 
   @Get('roles/:id')
   @Method([Methods.RBAC_GET_ROLE_BY_ID])
   @HttpCode(HttpStatus.OK)
   getRoleById(@Param('id') id: string, @Body() dto: GetRolesDto): Promise<IRole> {
-    return this.rbacService.getRoleById(Number(id), dto.withRules);
+    return this.rbacService.getRoleById(Number(id), dto);
   }
 
   @Post('roles/create')
@@ -87,7 +87,7 @@ export class RbacController {
     return this.rbacService.addRoles({ role_id: Number(role_id), user_id: body.user_id });
   }
 
-  @Delete('roles/del-roles/:id')
+  @Post('roles/del-roles/:id')
   @Method([Methods.RBAC_DEL_ROLE_FROM_USER])
   @HttpCode(HttpStatus.CREATED)
   delRoles(@Param('id') role_id: string, @Body() body: RoleToUserDto): Promise<boolean> {

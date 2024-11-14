@@ -20,6 +20,7 @@ export interface IRoleRules extends IRoleId, IBaseEntity {
 export interface IRole extends IBaseEntity {
     name: string;
     rules?: IRule[];
+    roleUsers?: IRolesUsers[];
 }
 
 export interface IRoleRelational extends IBaseEntity {
@@ -34,6 +35,7 @@ export interface IRule extends IBaseEntity {
 
 export interface IGetRoles {
     withRules: boolean;
+    withUsers: boolean;
 }
 
 export interface IGetRole extends IGetRoles {
